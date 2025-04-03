@@ -1,0 +1,114 @@
+#!scenic
+import carla
+import scenic.simulators.carla.model as carlaModel
+import scenic.simulators.carla.actions as carlaActions
+import scenic.syntax.veneer as veneer
+from scenic.core.geometry import OrientedPoint
+
+# Define the scenario
+scenario = veneer.Scenario()
+
+# Weather and time conditions
+weather = carla.WeatherParameters(
+    cloudiness=0,
+    precipitation=0,
+    sun_altitude_angle=70
+)
+
+# Ego vehicle definition
+egoVehicle = carlaModel.EgoVehicle at OrientedPoint(
+    x=0,  # position on the x-axis
+    y=0,  # position on the y-axis
+    heading=carlaModel.roadHeadingAt(0)  
+) with behavior carlaActions.goForward
+
+# Other vehicles relative to the ego vehicle
+carInFront0 = carlaModel.Vehicle('SUV', color='yellow') at OrientedPoint(
+    x=egoVehicle.position.x 
+    y=egoVehicle.position.y + carlaModel.defaultSpacing,
+    heading=egoVehicle.heading
+) with behavior carlaActions.goForward
+
+carInFront1 = carlaModel.Vehicle('SUV', color='yellow') 
+at OrientedPoint(
+    x=egoVehicle.position.x - 3.5,
+    y=egoVehicle.position.y + carlaModel.defaultSpacing, 
+    heading=egoVehicle.heading
+) with behavior carlaActions.goForward
+
+carInFront2 = carlaModel.Vehicle('SUV', color='yellow')  
+at OrientedPoint(
+    x=carInFront1.position.x + 3.5,
+    y=carInFront1.position.y + carlaModel.defaultSpacing,
+    heading=carInFront1.heading
+) with behavior carlaActions.goForward
+
+carInFront3 = carlaModel.Vehicle('SUV', color='yellow')  
+at OrientedPoint(
+    x=carInFront2.position.x - 3.5,
+    y=carInFront2.position.y - carlaModel.defaultSpacing,
+    heading=carInFront2.heading
+) with behavior carlaActions.goForward
+
+carInFront4 = carlaModel.Vehicle('SUV', color='yellow') 
+at OrientedPoint(
+    x=carInFront3.position.x + 3.5,
+    y=carInFront3.position.y - carlaModel.defaultSpacing,
+    heading=carInFront3.heading
+) with behavior carlaActions.goForward
+
+
+# Walkers
+pedestrian1 = carlaModel.Pedestrian('SUV', color='yellow')  
+at OrientedPoint(
+    x=egoVehicle.position.x - 3.5, 
+    y=egoVehicle.position.y + 20,  
+    heading=0  
+) with behavior carlaActions.walkForward
+
+
+pedestrian2 = carlaModel.Pedestrian('SUV', color='yellow')  
+at OrientedPoint(
+    x=egoVehicle.position.x - 3.5,  
+    y=egoVehicle.position.y + 20,  
+    heading= 90
+) with behavior carlaActions.walkForward
+
+# Traffic light ahead of the ego vehicle
+trafficLight = carlaModel.TrafficLight at OrientedPoint(
+    x=egoVehicle.position.x,
+    y=egoVehicle.position.y + (4 * carlaModel.defaultSpacing),  # ahead of all cars
+    heading=egoVehicle.heading
+)
+
+# Complete the scenario setup
+scenario.setup(
+    weather=weather,
+    timeOfDay='day',
+    vehicles=[egoVehicle, carInFront0, carInFront1, carInFront2, carInFront3, carInFront4],
+    pedestrians=[pedestrian1, pedestrian2],  # Add the pedestrians here
+    trafficLights=[trafficLight]
+)
+
+# Specify the parameters for the scenario
+scenario.params(
+    lane_num=3,  # Update the number of lanes to match the image
+    ego=dict(
+        position=egoVehicle.position,
+        behavior=egoVehicle.behavior,
+        laneIndex=1  # Update the lane index to place the ego vehicle correctly
+    ),
+    car=dict(
+        position=carInFront0.position,
+        behavior=carInFront0.behavior,
+        laneIndex=2  # Update the lane index to place the red SUV correctly
+    ),
+    carsAhead=[
+        dict(position=car.position, behavior=car.behavior)
+        for car in [carInFront1, carInFront2, carInFront3, carInFront4]
+    ],
+    weather=weather,
+    roadNetwork=['straight road', 'traffic light', 'dashed line', 'three lane road'] 
+)
+
+! scenic -s nighttimeDrivingScenario.scenic --simulator carla

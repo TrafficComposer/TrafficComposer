@@ -1,0 +1,26 @@
+environment:
+    weather: cloudy
+    time: daytime
+road_network: 
+    road_type: None
+    traffic_sign: None
+    traffic_light: green
+    lane_number: 5
+participant: 
+    ego_vehicle:
+        current_behavior: go forward
+        position_target: None
+        position_relation: None
+        speed: 40 mph
+    other_actor_1:
+        type: car
+        current_behavior: go forward
+        position_target: ego_vehicle
+        position_relation: front
+        speed: 45 mph
+    other_actor_2:
+        type: car
+        current_behavior: merging
+        position_target: other_actor_1
+        position_relation: front
+        speed: 40 mph
